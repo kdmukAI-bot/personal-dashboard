@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Notifications · Personal Dashboard{% endblock %}
+{% block content %}
+<section class="pd-page">
+  <h2>Notifications log</h2>
+  {% if notifications %}
+  <table class="pd-notifications-table">
+    <thead>
+      <tr><th>Time</th><th>Source</th><th>Title</th><th>Body</th></tr>
+    </thead>
+    <tbody>
+      {% for n in notifications %}
+      <tr>
+        <td><time datetime="{{ n.sent_at.isoformat() }}">{{ n.sent_at | days_ago }}</time></td>
+        <td>{{ n.source or '—' }}</td>
+        <td>
+          {% if n.click_url %}<a href="{{ n.click_url }}">{{ n.title }}</a>{% else %}{{ n.title }}{% endif %}
+        </td>
+        <td>{{ n.body or '' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if total_pages > 1 %}
+  <nav class="pd-pagination">
+    {% if page > 1 %}<a href="?page={{ page - 1 }}">← Previous</a>{% endif %}
+    <span>Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="?page={{ page + 1 }}">Next →</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <p class="pd-empty">No notifications yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,20 @@
+<header class="pd-widget-header">
+  <h2>Recent notifications</h2>
+  <a href="/notifications" class="pd-widget-link">All</a>
+</header>
+{% if notifications %}
+<ul class="pd-notifications-list">
+  {% for n in notifications %}
+  <li class="pd-notification">
+    <div class="pd-notification-title">{{ n.title }}</div>
+    {% if n.body %}<div class="pd-notification-body">{{ n.body }}</div>{% endif %}
+    <div class="pd-notification-meta">
+      {% if n.source %}<span class="pd-notification-source">{{ n.source }}</span>{% endif %}
+      <time datetime="{{ n.sent_at.isoformat() }}">{{ n.sent_at | days_ago }}</time>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="pd-empty">No notifications yet.</p>
+{% endif %}

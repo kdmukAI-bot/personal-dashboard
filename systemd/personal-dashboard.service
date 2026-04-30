@@ -1,0 +1,13 @@
+[Unit]
+Description=Personal Dashboard — self-hosted FastAPI dashboard with Web Push
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/kdmukai/dev/tools/personal-dashboard
+ExecStart=/home/kdmukai/dev/tools/personal-dashboard/.venv/bin/uvicorn personal_dashboard.main:app --host 127.0.0.1 --port 8421 --reload --reload-dir /home/kdmukai/dev/tools/personal-dashboard/personal_dashboard
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

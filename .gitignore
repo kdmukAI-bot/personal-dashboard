@@ -10,3 +10,6 @@ __pycache__/
 # Claude Code
 .claude/
 .claude-auto-commit
+
+# Local-only docs
+docs/knowledge/

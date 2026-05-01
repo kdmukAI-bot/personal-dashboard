@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/kdmukai/dev/tools/personal-dashboard
-ExecStart=/home/kdmukai/dev/tools/personal-dashboard/.venv/bin/uvicorn personal_dashboard.main:app --host 127.0.0.1 --port 8421 --reload --reload-dir /home/kdmukai/dev/tools/personal-dashboard/personal_dashboard
+ExecStart=/home/kdmukai/dev/tools/personal-dashboard/.venv/bin/uvicorn personal_dashboard.main:app --host 127.0.0.1 --port 8421 --reload --reload-dir /home/kdmukai/dev/tools/personal-dashboard/personal_dashboard --reload-dir /home/kdmukai/dev/tools/personal-dashboard-modules
 Restart=always
 RestartSec=10
 

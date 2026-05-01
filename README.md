@@ -2,6 +2,8 @@
 
 A self-hosted personal dashboard with Web Push notifications, server-sent events for live widgets, a GridStack-based draggable home layout, and an external-plugin system. Designed to run as a `systemd --user` service behind Cloudflare Tunnel + Cloudflare Access (browser auth) with a single bearer token gating the `/api/notify` write endpoint.
 
+For architectural rationale, design decisions, current open work, and future-module ideas, see [`docs/PLAN.md`](docs/PLAN.md).
+
 ## What you get
 
 - **Home dashboard** at `/` — GridStack tile layout, plugin widgets render in tiles.
@@ -53,7 +55,10 @@ pip install -e .
 
 3. **Run the server:**
    ```sh
-   uvicorn personal_dashboard.main:app --host 127.0.0.1 --port 8421
+   uvicorn personal_dashboard.main:app --host 127.0.0.1 --port 8421 \
+     --reload \
+     --reload-dir /home/kdmukai/dev/tools/personal-dashboard/personal_dashboard \
+     --reload-dir /home/kdmukai/dev/tools/personal-dashboard-modules
    ```
    Or install the systemd unit at `systemd/personal-dashboard.service` to `~/.config/systemd/user/`:
    ```sh
@@ -98,11 +103,19 @@ my-module = "my_module.analyzer:Analyzer"
 
 Module classes implement `update()` (returns a `ModuleResult` for the home widget), and may register custom FastAPI routes and Jinja templates via the protocol in `personal_dashboard/core/protocol.py`. Install the plugin into the dashboard's venv (`pip install -e ../path/to/plugin`) and restart — the loader picks it up automatically.
 
+## Development notes
+
+- **Static-asset cache busting is disabled in dev.** `asset_v` (the `?v=…` token appended to every `<link>` / `<script>` URL) is currently a callable that returns `int(time.time())` per render, so browsers re-fetch CSS/JS on every page load. This means CSS-only edits go live without a service restart. Once the dev pace settles, swap the lambda back to `str(int(time.time()))` at [`personal_dashboard/main.py`](personal_dashboard/main.py) (the line is comment-marked) to restore once-per-process caching.
+
 ## Deploying behind Cloudflare Tunnel + Access
 
 The dashboard binds to `127.0.0.1` by default. Put `cloudflared` in front, plus a Cloudflare Access policy on the hostname so only your identity can reach the UI. The bearer token on `/api/notify` is the second layer (so cron jobs / scripts can post without a browser session).
 
 If you see SSE instability through Cloudflare, check `docs/knowledge/sse-through-cloudflare-tunnel.md` (kept local in this repo, not published).
+
+### Android push reliability caveat
+
+Web Push delivery to Android is reliable while the PWA has been opened recently, but can be silently dropped after long idle (~24h+) — FCM accepts the push, but Android Doze + Chrome service-worker eviction can swallow it. `pd-notify` returning `delivered: N, failed: 0` does not guarantee on-device display. Opening the PWA wakes the service worker; subsequent pushes work. See `docs/knowledge/android-push-after-idle.md` (local-only) for the full diagnosis. A second SMS-based channel for truly urgent notifications is on the roadmap (see [`docs/PLAN.md`](docs/PLAN.md) → "Open core work").
 
 ## Configuration reference
 

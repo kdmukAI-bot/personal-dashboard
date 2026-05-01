@@ -148,6 +148,7 @@ def mount_modules(
         search_paths = list(loader.searchpath)
 
     policies: dict[str, str] = {}
+    plugin_stylesheets: list[str] = []
 
     for lm in loaded:
         templates_dir = lm.source_dir / "templates"
@@ -161,6 +162,8 @@ def mount_modules(
                 StaticFiles(directory=str(static_dir)),
                 name=f"static-{lm.name}",
             )
+            if (static_dir / "style.css").is_file():
+                plugin_stylesheets.append(f"/static/{lm.name}/style.css")
 
         router = APIRouter(prefix=f"/modules/{lm.name}")
         router.add_api_route("/widget", _make_widget_handler(lm, core), methods=["GET"])
@@ -192,6 +195,7 @@ def mount_modules(
         core.templates.env.loader = FileSystemLoader(search_paths)
 
     app.state.module_policies = policies
+    core.templates.env.globals["plugin_stylesheets"] = plugin_stylesheets
 
 
 async def _interval_loop(core: DashboardCoreImpl, lm: LoadedModule, seconds: float) -> None:

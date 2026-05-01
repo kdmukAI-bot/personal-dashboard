@@ -33,6 +33,39 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).parent.parent
 
 
+def time_ago(date_val) -> str:
+    """Render-time humanizer with minute-grained resolution.
+
+    Aware datetimes are converted to local; naive datetimes are treated as local.
+    """
+    if not date_val:
+        return ""
+    try:
+        if isinstance(date_val, datetime):
+            dt = date_val
+        else:
+            dt = datetime.fromisoformat(str(date_val).replace("Z", "+00:00"))
+        if dt.tzinfo is not None:
+            dt = dt.astimezone().replace(tzinfo=None)
+        seconds = int((datetime.now() - dt).total_seconds())
+        if seconds < 60:
+            return "just now"
+        if seconds < 3600:
+            return f"{seconds // 60}m ago"
+        if seconds < 86400:
+            return f"{seconds // 3600}h ago"
+        days = seconds // 86400
+        if days == 1:
+            return "yesterday"
+        if days < 30:
+            return f"{days}d ago"
+        if days < 365:
+            return f"{days // 30}mo ago"
+        return f"{days // 365}y ago"
+    except (ValueError, TypeError):
+        return str(date_val)[:10] if date_val else ""
+
+
 def days_ago(date_val) -> str:
     if not date_val:
         return ""
@@ -90,6 +123,7 @@ async def lifespan(app: FastAPI):
     app.state.loaded_modules = loaded
 
     mount_modules(app, core, loaded)
+    app.mount("/static", StaticFiles(directory=PROJECT_ROOT / "static"), name="static")
     start_scheduler(app, core, loaded)
 
     try:
@@ -121,9 +155,11 @@ app = FastAPI(title="Personal Dashboard", version="0.1.0", lifespan=lifespan)
 app.state.templates = Jinja2Templates(directory=PROJECT_ROOT / "templates")
 app.state.templates.env.auto_reload = True
 app.state.templates.env.filters["days_ago"] = days_ago
-app.state.templates.env.globals["asset_v"] = str(int(time.time()))
-
-app.mount("/static", StaticFiles(directory=PROJECT_ROOT / "static"), name="static")
+app.state.templates.env.filters["time_ago"] = time_ago
+# Dev-mode: per-render token disables browser caching of /static assets so CSS
+# edits are visible without a service restart. Switch to `str(int(time.time()))`
+# once the dev pace settles.
+app.state.templates.env.globals["asset_v"] = lambda: str(int(time.time()))
 
 
 @app.get("/sw.js", include_in_schema=False)

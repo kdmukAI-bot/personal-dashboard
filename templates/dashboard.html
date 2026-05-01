@@ -3,28 +3,27 @@
 {% block content %}
 <div class="pd-grid grid-stack">
   <!-- Built-in: recent notifications -->
-  <div class="grid-stack-item" gs-w="3" gs-h="2" gs-min-w="2" gs-min-h="1">
+  <div class="grid-stack-item" gs-id="notifications" gs-w="3" gs-h="2" gs-min-w="2" gs-min-h="1">
     <div class="grid-stack-item-content pd-widget">
       <div id="pd-notifications-widget"
            hx-get="/widgets/notifications"
-           hx-trigger="load, sse:notification">
-        <p>Loading notifications…</p>
+           hx-trigger="sse:notification">
+        {% include "notifications/widget.html" %}
       </div>
     </div>
   </div>
 
   {% for mod in loaded_modules %}
   <div class="grid-stack-item"
+       gs-id="{{ mod.name }}"
        gs-w="{{ mod.widget.default_w | default(3) }}"
        gs-h="{{ mod.widget.default_h | default(2) }}"
        gs-min-w="{{ mod.widget.min_w | default(2) }}"
        gs-min-h="{{ mod.widget.min_h | default(1) }}"
        {% if mod.widget.no_resize %}gs-no-resize="true"{% endif %}>
     <div class="grid-stack-item-content pd-widget">
-      <div id="{{ mod.name }}-widget"
-           hx-get="/modules/{{ mod.name }}/widget"
-           hx-trigger="load">
-        <p>Loading {{ mod.display_name }}…</p>
+      <div id="{{ mod.name }}-widget">
+        {{ rendered_widgets[mod.name] | safe }}
       </div>
     </div>
   </div>
@@ -36,10 +35,3 @@
 {% endif %}
 {% endblock %}
 
-{% block body_extra %}
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    PD.gridInit();
-  });
-</script>
-{% endblock %}

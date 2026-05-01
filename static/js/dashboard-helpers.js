@@ -34,13 +34,26 @@ PD.bindWidget = function (elementId, eventName) {
 PD.gridInit = function () {
   const el = document.querySelector('.pd-grid');
   if (!el || typeof GridStack === 'undefined') return null;
-  const grid = GridStack.init({ column: 12, cellHeight: 80, margin: 8 }, el);
+  const grid = GridStack.init({
+    column: 12,
+    cellHeight: 80,
+    margin: 8,
+    columnOpts: {
+      breakpointForWindow: true,
+      breakpoints: [{ w: 768, c: 1 }],
+    },
+  }, el);
   const layoutKey = window.matchMedia('(max-width: 768px)').matches ? 'mobile' : 'desktop';
   const storeKey = 'pd-layout-' + layoutKey;
   const saved = localStorage.getItem(storeKey);
   if (saved) {
-    try { grid.load(JSON.parse(saved)); } catch (e) { console.warn('[PD.grid] bad saved layout', e); }
+    try {
+      grid.batchUpdate();
+      grid.load(JSON.parse(saved), false);
+      grid.commit();
+    } catch (e) { console.warn('[PD.grid] bad saved layout', e); }
   }
+  el.classList.add('pd-grid-ready');
   grid.on('change', () => {
     try { localStorage.setItem(storeKey, JSON.stringify(grid.save(false))); } catch {}
   });

@@ -138,6 +138,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .pd-muted { color: var(--pd-muted); }
 
+/* Default padding for detail pages — every per-module detail view wraps its
+   content in <section class="pd-page">, so this gives them all consistent
+   edge spacing without each module having to redefine it. */
+.pd-page {
+  padding: 16px 20px;
+}
+
 .pd-settings {
   padding: 20px;
   max-width: 720px;

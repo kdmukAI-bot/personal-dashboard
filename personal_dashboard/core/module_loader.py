@@ -6,6 +6,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta
+from time import perf_counter
 from importlib.metadata import entry_points
 from pathlib import Path
 from typing import Any
@@ -93,9 +94,25 @@ def discover_modules() -> list[LoadedModule]:
     return loaded
 
 
+async def _timed_update(lm: LoadedModule):
+    t0 = perf_counter()
+    try:
+        return await lm.library.update()
+    finally:
+        logger.info("[timing] %s.update %.1fms", lm.name, (perf_counter() - t0) * 1000)
+
+
+async def _timed_get_data(lm: LoadedModule):
+    t0 = perf_counter()
+    try:
+        return await lm.library.get_data()
+    finally:
+        logger.info("[timing] %s.get_data %.1fms", lm.name, (perf_counter() - t0) * 1000)
+
+
 def _make_widget_handler(loaded: LoadedModule, core: DashboardCoreImpl):
     async def handler(request: Request):
-        data = await loaded.library.get_data()
+        data = await _timed_get_data(loaded)
         return core.templates.TemplateResponse(
             request,
             f"{loaded.name}/widget.html",
@@ -107,7 +124,7 @@ def _make_widget_handler(loaded: LoadedModule, core: DashboardCoreImpl):
 
 def _make_data_handler(loaded: LoadedModule):
     async def handler(request: Request):
-        data = await loaded.library.get_data()
+        data = await _timed_get_data(loaded)
         return JSONResponse(data)
 
     return handler
@@ -119,7 +136,7 @@ def _make_detail_handler(loaded: LoadedModule, core: DashboardCoreImpl):
     async def handler(request: Request):
         if not (loaded.source_dir / "templates" / loaded.name / "detail.html").is_file():
             raise HTTPException(status_code=404)
-        data = await loaded.library.get_data()
+        data = await _timed_get_data(loaded)
         return core.templates.TemplateResponse(
             request,
             detail_template,
@@ -201,7 +218,7 @@ def mount_modules(
 async def _interval_loop(core: DashboardCoreImpl, lm: LoadedModule, seconds: float) -> None:
     while True:
         try:
-            result = await lm.library.update()
+            result = await _timed_update(lm)
             if result is not None:
                 await core.publish_module_result(lm.name, result)
         except asyncio.CancelledError:
@@ -228,7 +245,7 @@ async def _daily_loop(core: DashboardCoreImpl, lm: LoadedModule, at_str: str) ->
         if delay > 0:
             await asyncio.sleep(delay)
         try:
-            result = await lm.library.update()
+            result = await _timed_update(lm)
             if result is not None:
                 await core.publish_module_result(lm.name, result)
         except asyncio.CancelledError:
@@ -252,7 +269,7 @@ async def _weekly_loop(
         if delay > 0:
             await asyncio.sleep(delay)
         try:
-            result = await lm.library.update()
+            result = await _timed_update(lm)
             if result is not None:
                 await core.publish_module_result(lm.name, result)
         except asyncio.CancelledError:

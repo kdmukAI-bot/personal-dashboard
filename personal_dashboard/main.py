@@ -28,6 +28,11 @@ from personal_dashboard.models.base import Base
 from personal_dashboard.models.notification import Notification  # noqa: F401
 from personal_dashboard.models.subscription import PushSubscription  # noqa: F401
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).parent.parent

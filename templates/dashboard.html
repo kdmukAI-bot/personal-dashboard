@@ -23,7 +23,11 @@
        {% if mod.widget.no_resize %}gs-no-resize="true"{% endif %}>
     <div class="grid-stack-item-content pd-widget">
       <div id="{{ mod.name }}-widget">
-        {{ rendered_widgets[mod.name] | safe }}
+        <div hx-get="/modules/{{ mod.name }}/widget"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+          <em>Loading {{ mod.display_name }}…</em>
+        </div>
       </div>
     </div>
   </div>
